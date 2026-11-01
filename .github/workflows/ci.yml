@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check
+        run: bun run typecheck
+
+      - name: Run tests
+        run: bun test
+
+      - name: Build ESM, CommonJS, and declarations
+        run: bun run build
+
+      - name: Smoke-test package entry points
+        run: |
+          node --input-type=module -e "import { createLogger, AppError } from './dist/index.js'; if (!createLogger || !AppError) process.exit(1)"
+          node -e "const p = require('./dist/index.cjs'); if (!p.createLogger || !p.AppError) process.exit(1)"
+          node --input-type=module -e "import { createFastifyLogger } from './dist/fastify.js'; if (!createFastifyLogger) process.exit(1)"
+          node --input-type=module -e "import { ErrorCode } from './dist/errors/index.js'; if (!ErrorCode.INTERNAL_ERROR) process.exit(1)"
+          node --input-type=module -e "import { FileTransport } from './dist/transports/index.js'; if (!FileTransport) process.exit(1)"
+
+      - name: Verify npm package contents
+        run: npm pack --dry-run

@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If Violin is useful in your work, please cite the project using this metadata."
+title: "Violin"
+type: software
+abstract: "A structured logging toolkit for Node.js and Bun with pluggable transports, redaction, application errors, and a Fastify logger adapter."
+authors:
+  - name: "Abdou"
+    affiliation: "Independent software developer"
+repository-code: "https://github.com/abdou-da0wew/violin"
+license: "MIT"
+version: "0.1.0"
